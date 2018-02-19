@@ -125,6 +125,9 @@ public class Archbishop extends Piece {
         if (Math.abs(currRow-newRow) != Math.abs(currCol-newCol)){
             return false;
         }
+        if(!checkDiagObstacles(board, newRow, newCol)){
+            return false;
+        }
         if(board.getTile(newRow,newCol).isOccupied() && board.getPieceColor(newRow,newCol)== this.getColor()){
             return false;
         }
@@ -141,8 +144,12 @@ public class Archbishop extends Piece {
         while(true){
             r++;
             c++;
+
             if(validMove(board,r,c)){
                 diagMoves.add(board.getTile(r,c));
+            }
+            else if(!outOfBounds(r,c) && board.getTile(r,c).isOccupied() && board.getPieceColor(r,c) == this.getColor()){
+                continue;
             }
             else{
                 break;
@@ -153,8 +160,12 @@ public class Archbishop extends Piece {
         while(true){
             r++;
             c--;
+
             if(validMove(board,r,c)){
                 diagMoves.add(board.getTile(r,c));
+            }
+            else if(!outOfBounds(r,c) && board.getTile(r,c).isOccupied() && board.getPieceColor(r,c) == this.getColor()){
+                continue;
             }
             else{
                 break;
@@ -165,8 +176,12 @@ public class Archbishop extends Piece {
         while(true){
             r--;
             c--;
+
             if(validMove(board,r,c)){
                 diagMoves.add(board.getTile(r,c));
+            }
+            else if(!outOfBounds(r,c) && board.getTile(r,c).isOccupied() && board.getPieceColor(r,c) == this.getColor()){
+                continue;
             }
             else{
                 break;
@@ -177,8 +192,12 @@ public class Archbishop extends Piece {
         while(true){
             r--;
             c++;
+
             if(validMove(board,r,c)){
                 diagMoves.add(board.getTile(r,c));
+            }
+            else if(!outOfBounds(r,c) && board.getTile(r,c).isOccupied() && board.getPieceColor(r,c) == this.getColor()){
+                continue;
             }
             else{
                 break;

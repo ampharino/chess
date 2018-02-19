@@ -9,7 +9,7 @@ public class GameTest {
 
     @Test
     public void testCheckMate(){
-        Game game = new Game();
+        Game game = new Game(false);
 
         game.board.getTilePiece(6,5).move(game.board,5,5);
         game.board.getTilePiece(1,4).move(game.board,3,4);
@@ -21,7 +21,7 @@ public class GameTest {
 
     @Test
     public void notCheckMate(){
-        Game game = new Game();
+        Game game = new Game(false);
 
         game.board.getTilePiece(6,5).move(game.board,4,5);
         game.board.getTilePiece(1,4).move(game.board,3,4);
@@ -38,7 +38,7 @@ public class GameTest {
 
     @Test
     public void kingMustMove(){
-        Game game = new Game();
+        Game game = new Game(false);
         Piece bishop = game.board.getTilePiece(0,5);
         game.board.getTilePiece(1,4).move(game.board,3,4);
         bishop.move(game.board,3,2);

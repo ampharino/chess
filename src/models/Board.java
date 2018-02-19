@@ -1,5 +1,6 @@
 package models;
 
+import java.security.Guard;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -115,6 +116,38 @@ public class Board {
 
     }
 
+    private void initArch(){
+        Archbishop blackBishop1 = new Archbishop(0, 2, BLACK);
+        Archbishop blackBishop2 = new Archbishop(0, 5, BLACK);
+        tiles[0][2].setPiece(blackBishop1);
+        tiles[0][5].setPiece(blackBishop2);
+        blackPieces.add(blackBishop1);
+        blackPieces.add(blackBishop2);
+
+        Archbishop whiteBishop1 = new Archbishop(7,2, WHITE);
+        Archbishop whiteBishop2 = new Archbishop(7,5, WHITE);
+        tiles[7][2].setPiece(whiteBishop1);
+        tiles[7][5].setPiece(whiteBishop2);
+        whitePieces.add(whiteBishop1);
+        whitePieces.add(whiteBishop2);
+
+    }
+
+    private void initGuard(){
+        Guardian bguard1 = new Guardian(0,1, BLACK);
+        Guardian bguard2 = new Guardian(0,6, BLACK);
+        tiles[0][1].setPiece(bguard1);
+        tiles[0][6].setPiece(bguard2);
+        blackPieces.add(bguard1);
+        blackPieces.add(bguard2);
+
+        Guardian wguard1 = new Guardian(7,1, WHITE);
+        Guardian wguard2 = new Guardian(7,6, WHITE);
+        tiles[7][1].setPiece(wguard1);
+        tiles[7][6].setPiece(wguard2);
+        whitePieces.add(wguard1);
+        whitePieces.add(wguard2);
+    }
     //initializes all pieces in correct positions
     public void init(){
         initKings();
@@ -124,6 +157,15 @@ public class Board {
         initQueens();
         initRooks();
 
+    }
+
+    public void initCustom(){
+        initKings();
+        initArch();
+        initGuard();
+        initPawns();
+        initQueens();
+        initRooks();
     }
     public Tile getTile(int row, int col){
         return tiles[row][col];

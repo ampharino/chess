@@ -7,6 +7,7 @@ import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,13 +17,15 @@ public class Chessboard extends JPanel{
     public Game game;
     public JButton[][] boardTiles = new JButton[8][8];
     private Insets buttonMargin = new Insets(0,0,0,0);
-    private Font buttonFont = new Font("Arial Unicode MS", Font.BOLD, 40);
+    private Font buttonFont = new Font("EversonMono", Font.BOLD, 40);
     public static final String WHITE_KING = "\u2654";
     public static final String WHITE_QUEEN = "\u2655";
     public static final String WHITE_ROOK = "\u2656";
     public static final String WHITE_BISHOP = "\u2657";
     public static final String WHITE_KNIGHT = "\u2658";
     public static final String WHITE_PAWN = "\u2659";
+    public static final String WHITE_GUARD = "\u26C9";
+    public static final String WHITE_ARCH = "\u2671";
 
     public static final String BLACK_KING = "\u265A";
     public static final String BLACK_QUEEN = "\u265B";
@@ -30,9 +33,12 @@ public class Chessboard extends JPanel{
     public static final String BLACK_BISHOP = "\u265D";
     public static final String BLACK_KNIGHT = "\u265E";
     public static final String BLACK_PAWN = "\u265F";
+    public static final String BLACK_GUARD = "\u26CA";
+    public static final String BLACK_ARCH = "\u2670";
     public int[] scoreRef;
     public String[] messageRef;
     public Main gui;
+    List<Command> moveStack;
 
     private Piece currSelected;
 
@@ -44,11 +50,12 @@ public class Chessboard extends JPanel{
     //Creates 64 buttons for each tile
     //Sets button text to chess unicode character
     //------------------------------------------------
-    public Chessboard(int[] scores, String[] messages, Main gui){
+    public Chessboard(boolean custom, int[] scores, String[] messages, Main gui, List<Command> m){
         super(new GridLayout(0,10));
         this.gui = gui;
         scoreRef = scores;
         messageRef = messages;
+        moveStack = m;
         currSelected = null;
         this.setBorder( new LineBorder(Color.black));
         this.add(new JLabel(""));
@@ -77,11 +84,16 @@ public class Chessboard extends JPanel{
         for(int col =0; col < 10; col++){
             this.add(new JLabel(""));
         }
-        game = new Game();
+        game = new Game(custom);
         addListeners();
         drawPieces();
     }
 
+    //------------------------------------------------
+    //When tile is clicked, select piece on tile and highlight tile
+    //For selected piece, get its valid moves
+    //Highlight tiles where piece can legally move to
+    //------------------------------------------------
     private void selectPiece(Piece piece, int row, int col){
         if(game.blackTurn) {
             if (piece.getColor() == Piece.BLACK) {
@@ -108,11 +120,25 @@ public class Chessboard extends JPanel{
 
     }
 
+    //------------------------------------------------
+    //Saves current position of selected piece and piece at destination
+    //Add move to move stack for undo
+    //Move piece to destination and capture if applicable
+    //Change turn to other player if move successful
+    //unhighlight any tiles
+    //------------------------------------------------
     private void doMove(int row, int col){
         int prevRow = currSelected.getRow();
         int prevCol = currSelected.getColumn();
+        boolean pawnFirstMove = false;
+        if(currSelected instanceof Pawn){
+            pawnFirstMove = ((Pawn) currSelected).isFirstMove();
+        }
+        Piece captured = game.board.getTilePiece(row,col);
         boolean result = currSelected.move(game.board,row,col);
+
         if(result){
+            moveStack.add(new Command(currSelected, captured, prevRow, prevCol,pawnFirstMove));
             boardTiles[prevRow][prevCol].setText("");
             drawPieces();
             currSelected = null;
@@ -132,6 +158,52 @@ public class Chessboard extends JPanel{
 
     }
 
+
+    //------------------------------------------------
+    //Pop last move from move stack
+    //Set moved piece to previous position
+    //Add captured piece back into play
+    //Re-draw board
+    //Revert turn
+    public void undoMove(Command lastMove){
+        messageRef[1] = "UNDOING MOVE";
+        Piece selected = lastMove.selected;
+        if(selected instanceof Pawn && lastMove.firstMove){
+            ((Pawn) selected).setFirstMove();
+        }
+        if(selected.getColor() == Piece.BLACK){
+            messageRef[0] = "BLACK";
+            game.blackTurn = true;
+
+        }
+        else{
+            messageRef[0] = "WHITE";
+            game.blackTurn = false;
+        }
+        int prevRow = lastMove.prevRow;
+        int prevCol = lastMove.prevCol;
+        int currRow = selected.getRow();
+        int currCol = selected.getColumn();
+        Piece captured = lastMove.captured;
+        selected.setNewPos(prevRow, prevCol);
+        game.board.getTile(prevRow,prevCol).setPiece(selected);
+        if(captured != null){
+            if(captured.getColor() == Piece.BLACK){
+                game.board.getBlackPieces().add(captured);
+            }
+            else{
+                game.board.getWhitePieces().add(captured);
+            }
+
+        }
+        game.board.getTile(currRow,currCol).setPiece(captured);
+        boardTiles[currRow][currCol].setText("");
+        drawPieces();
+        gui.updateMessages();
+    }
+
+
+    //Highlights king if in check
     private void checkHandle(){
         if(game.check()){
             messageRef[1] = messageRef[0] + "'s KING IN CHECK";
@@ -153,6 +225,14 @@ public class Chessboard extends JPanel{
         revalidate();
         repaint();
     }
+
+    //------------------------------------------------
+    //Main controller
+    //Clicking buttons when game is finished does nothing
+    //If there is no piece currently selected, clicking a tile selects piece on that tile
+    //If there is a piece selected, clicking a tile, moves selected piece to the clicked tile
+    //If move results in checkmate, game over and update scores
+    //------------------------------------------------
     private void addListeners(){
         for(int row=0; row<8;row++){
             for(int col=0; col<8; col++){
@@ -182,10 +262,10 @@ public class Chessboard extends JPanel{
                             messageRef[1] = messageRef[0] + " WINS!";
                             gui.showCheckmateLabel();
                             if(game.blackTurn){
-                                scoreRef[Piece.BLACK]++;
+                                scoreRef[Piece.WHITE]++;
                             }
                             else{
-                                scoreRef[Piece.WHITE]++;
+                                scoreRef[Piece.BLACK]++;
                             }
                             gui.updateScores();
                             gui.updateMessages();
@@ -200,7 +280,6 @@ public class Chessboard extends JPanel{
                         }
                         checkHandle();
                         gui.updateMessages();
-
                     }
                 });
             }
@@ -229,6 +308,12 @@ public class Chessboard extends JPanel{
             else if(piece instanceof Bishop){
                 boardTiles[row][col].setText(BLACK_BISHOP);
             }
+            else if(piece instanceof Archbishop){
+                boardTiles[row][col].setText(BLACK_ARCH);
+            }
+            else if(piece instanceof Guardian){
+                boardTiles[row][col].setText(BLACK_GUARD);
+            }
             else{
                 boardTiles[row][col].setText(BLACK_QUEEN);
             }
@@ -250,6 +335,12 @@ public class Chessboard extends JPanel{
             }
             else if(piece instanceof Bishop){
                 boardTiles[row][col].setText(WHITE_BISHOP);
+            }
+            else if(piece instanceof Archbishop){
+                boardTiles[row][col].setText(WHITE_ARCH);
+            }
+            else if(piece instanceof Guardian){
+                boardTiles[row][col].setText(WHITE_GUARD);
             }
             else{
                 boardTiles[row][col].setText(WHITE_QUEEN);

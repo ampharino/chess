@@ -19,6 +19,8 @@ public class Pawn extends Piece {
         this.firstMove = false;
     }
 
+    public void setFirstMove(){this.firstMove = true;}
+
 
 
     //Check if the pawn is allowed to move two spaces
@@ -34,6 +36,7 @@ public class Pawn extends Piece {
         }
         return true;
     }
+
 
 
     //Check if the pawn is allowed to move to destination row

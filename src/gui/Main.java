@@ -5,6 +5,8 @@ import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main {
     private JFrame gameFrame;
@@ -20,8 +22,11 @@ public class Main {
     private JLabel turn;
     private JLabel event;
     private JLabel checkmate;
+    private JButton customGameButton;
     private JButton newGameButton;
     private JButton forfeitButton;
+    private JButton undoButton;
+    private List<Command> moveStack = new ArrayList<>();
     private Font labelFont = new Font("Arial Unicode MS", Font.BOLD, 15);
 
     //Create gui frame
@@ -30,7 +35,6 @@ public class Main {
         scores[1] = 0;
         messages[0] = "WHITE";
         messages[1] = "";
-
         gameFrame = new JFrame("Assignment1");
         gameFrame.setSize(size+100,size);
         gameFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -49,40 +53,50 @@ public class Main {
         newGameButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                newGame();
+                newGame(false);
+            }
+        });
+        customGameButton = new JButton("Custom");
+        customGameButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                newGame(true);
             }
         });
         forfeitButton = new JButton("Forfeit");
         forfeitButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                forfeitAction();
+            }
+        });
+        undoButton = new JButton("Undo");
+        undoButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
                 if(gameBoard.game.gameOver){
                     return;
                 }
-                if(gameBoard.game.blackTurn){
-                    scores[1]++;
-                    messages[1] = "BLACK FORFEITS.";
-                    gameBoard.game.gameOver = true;
-
+                Command lastMove = getLastMove();
+                if(lastMove == null){
+                    return;
                 }
-                else{
-                    scores[0]++;
-                    messages[1] = "WHITE FORFEITS.";
-                    gameBoard.game.gameOver = true;
-                }
-                updateScores();
-                updateMessages();
+                gameBoard.undoMove(lastMove);
 
             }
         });
+        undoButton.setVisible(false);
         forfeitButton.setVisible(false);
         options.add(newGameButton);
+        options.add(customGameButton);
         options.add(forfeitButton);
+        options.add(undoButton);
         options.setFloatable(false);
         body.add(options, BorderLayout.PAGE_START);
 
     }
 
+    //initialize sideBar. make some elements invisible until new game is started
     public void initSidebar(){
         sideBar = new JPanel(new GridLayout(20,1));
         sideBar.setPreferredSize(new Dimension(200,800));
@@ -109,17 +123,23 @@ public class Main {
 
 
     //Create new game instance
+    //Clear move history
+    //Make elements visible
     //Draw chessboard
-    public void newGame(){
+    public void newGame(boolean custom){
+        if(!moveStack.isEmpty()){
+            moveStack.clear();
+        }
         checkmate.setVisible(false);
         forfeitButton.setVisible(true);
+        undoButton.setVisible(true);
         messages[0] = "WHITE";
         messages[1] = "";
         sideBar.setVisible(true);
         if(gameBoard != null){
             body.remove(gameBoard);
         }
-        gameBoard = new Chessboard(scores, messages, this);
+        gameBoard = new Chessboard(custom,scores, messages, this, moveStack);
         gameBoard.setBorder(new LineBorder(Color.black));
         body.add(gameBoard, BorderLayout.CENTER);
         updateMessages();
@@ -141,6 +161,32 @@ public class Main {
 
     public void showCheckmateLabel(){
         checkmate.setVisible(true);
+    }
+
+    public Command getLastMove(){
+        if(!moveStack.isEmpty()){
+            return moveStack.remove(moveStack.size()-1);
+        }
+        return null;
+    }
+
+    public void forfeitAction(){
+        if(gameBoard.game.gameOver){
+            return;
+        }
+        if(gameBoard.game.blackTurn){
+            scores[1]++;
+            messages[1] = "BLACK FORFEITS.";
+            gameBoard.game.gameOver = true;
+
+        }
+        else{
+            scores[0]++;
+            messages[1] = "WHITE FORFEITS.";
+            gameBoard.game.gameOver = true;
+        }
+        updateScores();
+        updateMessages();
     }
 
     public static void main(String[] args) {

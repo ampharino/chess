@@ -47,7 +47,7 @@ public class Guardian extends Piece {
             }
         }
         else{
-            for(int row = 7; row > 3; row++){
+            for(int row = 7; row > 3; row--){
                 for(int col =0; col < 8; col++){
                     if(validMove(board,row,col)){
                         validMoves.add(board.getTile(row,col));

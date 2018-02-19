@@ -9,9 +9,14 @@ public class Game {
     public boolean gameOver;
     public boolean blackTurn;
 
-    public Game(){
+    public Game(boolean custom){
         board = new Board();
-        board.init();
+        if(custom){
+            board.initCustom();
+        }
+        else{
+            board.init();
+        }
         blackTurn = false;
         gameOver = false;
     }
